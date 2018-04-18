@@ -8,6 +8,10 @@ import android.provider.Telephony;
 import android.telephony.SmsMessage;
 import android.util.Log;
 
+import com.pringstudio.smsclient.events.NewMessageEvent;
+
+import org.greenrobot.eventbus.EventBus;
+
 public class SMSReceiverService extends BroadcastReceiver {
 
     @Override
@@ -19,7 +23,9 @@ public class SMSReceiverService extends BroadcastReceiver {
 
             Bundle bundle = intent.getExtras();
             SmsMessage[] msgs = null;
-            String msgFrom;
+            String msgFrom = "";
+            String msgBody = "";
+            StringBuilder stringBuilder = new StringBuilder();
 
             if (bundle != null){
 
@@ -29,12 +35,17 @@ public class SMSReceiverService extends BroadcastReceiver {
                     for(int i=0; i<msgs.length; i++){
                         msgs[i] = SmsMessage.createFromPdu((byte[])pdus[i]);
                         msgFrom = msgs[i].getOriginatingAddress();
-                        String msgBody = msgs[i].getMessageBody();
+                        String msgPart = msgs[i].getMessageBody();
 
-                        Log.d("Incoming Message", "SMS From " + msgFrom + ", Content: "+ msgBody);
+                        stringBuilder.append(msgPart);
+//                        Log.d("Incoming Message", "SMS From " + msgFrom + ", Content: "+ msgPart);
                     }
+                    // Dispatch Event
+                    EventBus.getDefault().post(new NewMessageEvent(msgFrom, stringBuilder.toString()));
 
-                    this.abortBroadcast();
+                    Log.d("Wrapped message", "Wrapped Message from "+msgFrom+" is: "+stringBuilder.toString());
+
+//                    this.abortBroadcast();
                 }catch(Exception e){
                     Log.d("Exception caught",e.getMessage());
                 }
